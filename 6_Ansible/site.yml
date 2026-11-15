@@ -1,0 +1,41 @@
+---
+- name: Configure Nginx on EC2
+  hosts: web
+  become: yes
+
+  vars:
+    web_root: /var/www/html
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Ensure Nginx is enabled and running
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Create web root
+      file:
+        path: "{{ web_root }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Deploy index.html
+      copy:
+        src: files/index.html
+        dest: "{{ web_root }}/index.html"
+        owner: www-data
+        group: www-data
+        mode: "0644"
